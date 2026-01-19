@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QRコード生成 - カラー&シェイプエクスプローラー</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 3rem;
+            font-size: 2rem;
+        }
+        
+        .qr-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .qr-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        
+        .qr-card h2 {
+            margin-bottom: 1rem;
+            color: #333;
+            font-size: 1.5rem;
+        }
+        
+        .qr-code {
+            display: inline-block;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        
+        .student-id {
+            font-size: 0.9rem;
+            color: #666;
+            font-family: monospace;
+            margin: 1rem 0;
+            word-break: break-all;
+        }
+        
+        .access-url {
+            background: #f5f5f5;
+            padding: 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #333;
+            font-family: monospace;
+            word-break: break-all;
+            margin: 1rem 0;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-print {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-print:hover {
+            background: #45a049;
+        }
+        
+        .btn-copy {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .btn-copy:hover {
+            background: #0b7dda;
+        }
+        
+        .instructions {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-top: 3rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        
+        .instructions ol {
+            color: #666;
+            margin-left: 1.5rem;
+            line-height: 1.8;
+        }
+        
+        .instructions li {
+            margin-bottom: 0.5rem;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .instructions {
+                display: none;
+            }
+            
+            .button-group {
+                display: none;
+            }
+            
+            .qr-grid {
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .qr-card {
+                page-break-inside: avoid;
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 QRコード生成ページ</h1>
+        <p style="text-align: center; color: white; margin-bottom: 2rem;">発表会用 - このページでQRコードを生成してポスターに貼り付けてください</p>
+        
+        <div class="qr-grid">
+            <div class="qr-card">
+                <h2>QRコード設定</h2>
+                <div style="margin: 2rem 0;">
+                    <div class="form-group">
+                        <label style="color: #333; font-weight: 600; display: block; margin-bottom: 0.5rem;">ポスタータイトル</label>
+                        <input type="text" id="titleInput" value="カラー&シェイプエクスプローラー" style="width: 100%; padding: 0.75rem; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
+                    </div>
+                    <div class="form-group" style="margin-top: 1rem;">
+                        <label style="color: #333; font-weight: 600; display: block; margin-bottom: 0.5rem;">共有用ホスト/IP（例: 192.168.0.9）</label>
+                        <input type="text" id="hostInput" placeholder="例: 192.168.0.9" style="width: 100%; padding: 0.75rem; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
+                        <small style="color: #64748b; display: block; margin-top: 0.25rem;">同じWi-Fi内のPCのIP。localhostはスマホからアクセス不可</small>
+                    </div>
+                    <div class="form-group" style="margin-top: 1rem;">
+                        <label style="color: #333; font-weight: 600; display: block; margin-bottom: 0.5rem;">フロントエンドポート</label>
+                        <input type="text" id="portInput" value="8080" style="width: 100%; padding: 0.75rem; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
+                    </div>
+                </div>
+                <div id="qrCode" class="qr-code"></div>
+                <div class="access-url" id="urlDisplay"></div>
+                <div class="button-group">
+                    <button class="btn-copy" onclick="copyQRUrl()">🔗 URLをコピー</button>
+                    <button class="btn-print" onclick="window.print()">🖨️ ポスターを印刷</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>📋 使い方：</h3>
+            <ol>
+                <li><strong>設定:</strong> 上のタイトルフィールドでポスターの説明を編集（必要に応じて）</li>
+                <li><strong>生成:</strong> QRコードが自動生成されます</li>
+                <li><strong>印刷:</strong> ページを印刷（Ctrl+P / Cmd+P）してA4用紙に出力</li>
+                    // 入力値からURLを構築（必ず http を使用）
+                    const hostInput = document.getElementById('hostInput');
+                    const portInput = document.getElementById('portInput');
+                    const configuredHost = (hostInput.value || '').trim();
+                    const configuredPort = (portInput.value || '8080').trim();
+
+                    // file:// で開いていると window.location.protocol が file: になり誤QRになるため固定
+                    const protocol = 'http';
+
+                    if (!configuredHost) {
+                        document.getElementById('urlDisplay').textContent = '⚠ まず共有用ホスト/IPを入力してください（例: 192.168.0.9）';
+                        return;
+                    }
+
+                    const accessUrl = `${protocol}://${configuredHost}:${configuredPort}/index.html`;
+        let currentQRCode = null;
+
+        function generateQRCode() {
+            // コンピュータのIPアドレスを取得（127.0.0.1以外）
+            const host = window.location.hostname;
+            let displayHost = host;
+            
+            // localhost や 127.0.0.1 の場合は、LAN内のIPアドレスを使用するよう指示
+            if (host === 'localhost' || host === '127.0.0.1') {
+                // クライアント側からIPアドレスを推測（開発環境では手動指定が必要）
+                // QRコード生成時に実際のIPアドレスを使用
+                displayHost = window.location.hostname;
+                
+                // 他のデバイスからアクセスする場合は、このIPアドレスを使用してください
+                // 例: http://192.168.x.x:8080/index.html
+                const userIpInput = prompt(
+                    'QRコードに含めるIPアドレスを入力してください（例: 192.168.1.100）\n' +
+                    'または localhost をそのまま使用する場合は空白のままOKを押してください',
+                    ''
+                );
+                
+                if (userIpInput) {
+                    displayHost = userIpInput;
+                }
+            }
+            
+            const protocol = window.location.protocol;
+            
+            // URLは学生IDなし（QRスキャンして閲覧者の入力待ち）
+            // フロントエンドをポート8080で配信
+            const accessUrl = `${protocol}//${displayHost}:8080/index.html`;
+            
+            document.getElementById('urlDisplay').textContent = accessUrl;
+            
+            // 既存のQRコードがあれば削除
+            const qrContainer = document.getElementById('qrCode');
+            qrContainer.innerHTML = '';
+            
+            // 新しいQRコード生成
+            currentQRCode = new QRCode(qrContainer, {
+                text: accessUrl,
+                width: 300,
+                height: 300,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+
+        function copyQRUrl() {
+            const url = document.getElementById('urlDisplay').textContent;
+            navigator.clipboard.writeText(url).then(() => {
+                alert('URLがコピーされました!');
+            });
+        }
+
+        // ページ読み込み時にQRコード生成
+        document.addEventListener('DOMContentLoaded', () => {
+            // 初期ホストの自動設定（httpで開いている場合のみ有効）
+            const initialHost = window.location.hostname || '';
+            const hostInput = document.getElementById('hostInput');
+            const portInput = document.getElementById('portInput');
+            if (hostInput && !hostInput.value) {
+                hostInput.value = initialHost;
+            }
+            if (portInput && !portInput.value) {
+                portInput.value = '8080';
+            }
+            generateQRCode();
+        });
+
+        // タイトル変更時も再生成（オプション）
+        document.getElementById('titleInput').addEventListener('change', generateQRCode);
+        document.getElementById('hostInput').addEventListener('change', generateQRCode);
+        document.getElementById('portInput').addEventListener('change', generateQRCode);
+    </script>
+</body>
+</html>

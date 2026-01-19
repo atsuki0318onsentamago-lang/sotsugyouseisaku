@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教員ダッシュボード - デザイン学習アプリ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #6366f1;
+            --secondary: #ec4899;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .setup-section {
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+        }
+
+        .setup-section h2 {
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .btn:hover { background: #4f46e5; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 0.9rem;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .stat-card .number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .students-list {
+            background: var(--surface);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .student-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .student-item:last-child { border-bottom: none; }
+
+        .student-info h4 {
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+        }
+
+        .student-info p {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .emotions-bar {
+            display: flex;
+            gap: 0.25rem;
+            flex-wrap: wrap;
+        }
+
+        .emotion-tag {
+            background: #f1f5f9;
+            padding: 0.25rem 0.75rem;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            color: var(--text);
+        }
+
+        .loading { text-align: center; padding: 2rem; color: #64748b; }
+        
+        .error { 
+            background: #fee2e2; 
+            color: #991b1b; 
+            padding: 1rem; 
+            border-radius: 8px; 
+            margin: 1rem 0;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-chalkboard-user"></i> 教員ダッシュボード</h1>
+        <p>デザイン学習アプリ - 学生の感性データを確認</p>
+    </div>
+
+    <div class="container">
+        <!-- 設定セクション（シンプル化） -->
+        <div class="setup-section">
+            <h2>📊 データを読み込み</h2>
+            <p style="color: #64748b; margin-bottom: 1rem;">展覧会で集まったすべての学生データを表示します</p>
+            <button class="btn" onclick="loadAllData()">🔄 データ更新</button>
+        </div>
+
+        <!-- 統計情報 -->
+        <div id="statsSection" style="display: none;">
+            <div class="stats-grid" id="statsGrid"></div>
+
+            <!-- グラフ -->
+            <div class="stats-grid">
+                <div style="background: var(--surface); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border);">
+                    <h3 style="margin-bottom: 1rem;">感情分布</h3>
+                    <div id="emotionChart"></div>
+                </div>
+                <div style="background: var(--surface); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border);">
+                    <h3 style="margin-bottom: 1rem;">カラースキーム分布</h3>
+                    <div id="colorChart"></div>
+                </div>
+            </div>
+
+            <!-- 学生一覧 -->
+            <div style="margin-top: 2rem;">
+                <h2 style="margin-bottom: 1rem;">学生別データ</h2>
+                <div class="students-list" id="studentsList"></div>
+            </div>
+        </div>
+
+        <div id="noDataMessage" class="empty-state">
+            <i class="fas fa-inbox" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+            <p>データがまだありません。「データ更新」をクリックしてください。</p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+
+        // モックデータ（デモ用）
+        const MOCK_DATA = {
+            totalStudents: 3,
+            totalDesigns: 12,
+            students: [
+                {
+                    studentId: 'student_001',
+                    studentName: '山田太郎',
+                    favorites: [{}, {}, {}, {}, {}],
+                    emotionCount: { 'ワクワク': 3, 'かっこいい': 2 }
+                },
+                {
+                    studentId: 'student_002',
+                    studentName: '佐藤花子',
+                    favorites: [{}, {}, {}],
+                    emotionCount: { 'かわいい': 2, 'やさしい': 1 }
+                },
+                {
+                    studentId: 'student_003',
+                    studentName: '鈴木一郎',
+                    favorites: [{}, {}, {}, {}],
+                    emotionCount: { 'おちつく': 2, 'さわやか': 2 }
+                }
+            ],
+            emotionDistribution: {
+                'ワクワク': 3,
+                'かっこいい': 2,
+                'かわいい': 2,
+                'おちつく': 2,
+                'さわやか': 2,
+                'やさしい': 1
+            },
+            colorSchemeDistribution: {
+                'vibrant': 4,
+                'pastel': 3,
+                'earth': 3,
+                'cool': 2
+            }
+        };
+
+        async function loadAllData() {
+            try {
+                document.getElementById('noDataMessage').style.display = 'none';
+                document.getElementById('statsSection').style.display = 'block';
+                
+                // ローディング表示
+                const statsGrid = document.getElementById('statsGrid');
+                if (statsGrid) {
+                    statsGrid.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> データを読み込み中...</div>';
+                }
+
+                let data;
+
+                // サーバーからデータ取得を試みる
+                try {
+                    const res = await fetch(`${API_URL}/analytics/all`, { 
+                        signal: AbortSignal.timeout(10000) 
+                    });
+                    
+                    if (res.ok) {
+                        data = await res.json();
+                        console.log('✅ サーバーからのデータ取得成功:', data);
+                    } else {
+                        throw new Error('APIエラー: ' + res.status);
+                    }
+                } catch (apiError) {
+                    // APIが失敗した場合、モックデータを使用
+                    console.warn('APIに接続できません。モックデータを使用します。', apiError);
+                    document.getElementById('noDataMessage').innerHTML = 
+                        '<p style="background: #fef3c7; color: #92400e; padding: 1rem; border-radius: 8px; margin: 1rem 0;">⚠️ サーバーに接続できません。デモデータを表示しています。</p>';
+                    document.getElementById('noDataMessage').style.display = 'block';
+                    
+                    data = MOCK_DATA;
+                }
+
+                displayStats(data);
+                displayStudents(data.students || []);
+            } catch (error) {
+                console.error('データ読込エラー:', error);
+                document.getElementById('noDataMessage').innerHTML = 
+                    `<p class="error">❌ エラーが発生しました: ${error.message}<br>サーバーが http://localhost:3000 で起動しているか確認してください。</p>`;
+                document.getElementById('noDataMessage').style.display = 'block';
+                document.getElementById('statsSection').style.display = 'none';
+            }
+        }
+
+        function displayStats(data) {
+            const totalDesigns = data.totalDesigns || 0;
+            const totalStudents = data.totalStudents || 0;
+            
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <h3>参加学生数</h3>
+                    <div class="number">${totalStudents}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>保存デザイン数</h3>
+                    <div class="number">${totalDesigns}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>平均保存数/人</h3>
+                    <div class="number">${totalStudents > 0 ? (totalDesigns / totalStudents).toFixed(1) : '0'}</div>
+                </div>
+            `;
+
+            // 感情分布
+            const emotionData = data.emotionDistribution || {};
+            const emotionChart = document.getElementById('emotionChart');
+            emotionChart.innerHTML = Object.entries(emotionData)
+                .sort((a, b) => b[1] - a[1])
+                .map(([emotion, count]) => {
+                    const percent = totalDesigns > 0 ? Math.round((count / totalDesigns) * 100) : 0;
+                    return `
+                        <div style="margin-bottom: 0.75rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.9rem;">
+                                <span><strong>${emotion}</strong></span>
+                                <span>${count}個 (${percent}%)</span>
+                            </div>
+                            <div style="background: #e2e8f0; height: 24px; border-radius: 4px; overflow: hidden;">
+                                <div style="background: linear-gradient(90deg, #6366f1, #ec4899); height: 100%; width: ${percent}%; transition: width 0.3s;"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            // カラースキーム分布
+            const colorData = data.colorSchemeDistribution || {};
+            const colorChart = document.getElementById('colorChart');
+            colorChart.innerHTML = Object.entries(colorData)
+                .sort((a, b) => b[1] - a[1])
+                .map(([scheme, count]) => {
+                    const percent = totalDesigns > 0 ? Math.round((count / totalDesigns) * 100) : 0;
+                    const schemeLabels = {
+                        'vibrant': 'ビビッド',
+                        'pastel': 'パステル',
+                        'earth': 'アースカラー',
+                        'monochrome': 'モノクローム',
+                        'warm': '暖色系',
+                        'cool': '寒色系'
+                    };
+                    return `
+                        <div style="margin-bottom: 0.75rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.9rem;">
+                                <span><strong>${schemeLabels[scheme] || scheme}</strong></span>
+                                <span>${count}個 (${percent}%)</span>
+                            </div>
+                            <div style="background: #e2e8f0; height: 24px; border-radius: 4px; overflow: hidden;">
+                                <div style="background: linear-gradient(90deg, #6366f1, #ec4899); height: 100%; width: ${percent}%; transition: width 0.3s;"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+        }
+
+        function displayStudents(students) {
+            const studentsList = document.getElementById('studentsList');
+            
+            if (!students || students.length === 0) {
+                studentsList.innerHTML = '<div style="padding: 2rem; text-align: center; color: #64748b;">学生データがまだありません</div>';
+                return;
+            }
+
+            studentsList.innerHTML = students.map(student => {
+                const emotions = Object.entries(student.emotionCount || {})
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5)
+                    .map(([emotion, count]) => `<span class="emotion-tag">${emotion} (${count})</span>`)
+                    .join('');
+
+                return `
+                    <div class="student-item">
+                        <div class="student-info">
+                            <h4>${student.studentName}</h4>
+                            <p>ID: ${student.studentId.substring(0, 20)}... | デザイン保存: ${(student.favorites || []).length}個</p>
+                            <div class="emotions-bar" style="margin-top: 0.5rem;">
+                                ${emotions || '<span class="emotion-tag">データなし</span>'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 初期化時は何もしない（ボタンクリック待ち）
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('✅ ダッシュボード準備完了。「データ更新」ボタンをクリックしてください。');
+        });
+    </script>
+</body>
+</html>

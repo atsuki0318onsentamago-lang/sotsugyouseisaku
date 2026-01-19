@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カラー&シェイプエクスプローラー - デザイン学習アプリ</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- デバッグパネル -->
+        <div id="debugPanel" style="position: fixed; top: 60px; right: 10px; background: rgba(0,0,0,0.9); color: #0f0; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 11px; max-width: 250px; max-height: 150px; overflow-y: auto; z-index: 9999; display: none; border: 2px solid #0f0;">
+            <div style="font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #0f0; padding-bottom: 5px;">🐛 DEBUG LOG</div>
+            <div id="debugLog"></div>
+        </div>
+        
+        <!-- デバッグ表示ボタン -->
+        <button id="debugToggle" style="position: fixed; top: 10px; right: 10px; padding: 12px 16px; background: #ff4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; z-index: 9998; font-family: monospace; box-shadow: 0 0 10px rgba(255,0,0,0.5);">🐛 DEBUG</button>
+
+        <!-- ヘッダー -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">
+                    <i class="fas fa-palette"></i>
+                    カラー&シェイプエクスプローラー
+                </h1>
+                <p class="app-subtitle">あなたの好きな色と形を見つけよう</p>
+            </div>
+            <nav class="app-nav">
+                <button class="nav-btn active" data-view="explore">
+                    <i class="fas fa-compass"></i>
+                    探索する
+                </button>
+                <button class="nav-btn" data-view="favorites">
+                    <i class="fas fa-heart"></i>
+                    お気に入り
+                    <span class="favorites-count" id="favoritesCount">0</span>
+                </button>
+            </nav>
+        </header>
+
+        <!-- メインコンテンツ -->
+        <main class="main-content">
+            <!-- クラス設定モーダル -->
+            <div id="classSetupModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+                <div style="background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 400px;">
+                    <h2 style="margin-bottom: 1rem;">あなたの名前を入力</h2>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">学生名</label>
+                        <input type="text" id="studentNameInput" placeholder="例：山田太郎" style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px;">
+                    </div>
+                    <div id="classIdGroup" style="margin-bottom: 1rem; display: none;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">クラスID（教員から指定されたもの、例：2024-3A）</label>
+                        <input type="text" id="classIdInput" placeholder="2024-3A" style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px;">
+                        <small style="color: #64748b; display: block; margin-top: 0.25rem;">※ 英数字と「-」のみ使用してください</small>
+                    </div>
+                    <button id="saveStudentNameBtn" style="width: 100%; padding: 0.75rem; background: #6366f1; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">探索を開始</button>
+                </div>
+            </div>
+
+            <!-- 探索ビュー -->
+            <section class="view-section active" id="exploreView">
+                <div class="controls-panel">
+                    <div class="control-group" style="display: none;">
+                        <label for="colorScheme">カラースキーム:</label>
+                        <select id="colorScheme" class="control-select">
+                            <option value="vibrant">ビビッド</option>
+                            <option value="pastel">パステル</option>
+                            <option value="earth">アースカラー</option>
+                            <option value="monochrome">モノクローム</option>
+                            <option value="warm">暖色系</option>
+                            <option value="cool">寒色系</option>
+                        </select>
+                    </div>
+                    <div class="control-group" style="display: none;">
+                        <label for="shapeCount">形の数:</label>
+                        <input type="range" id="shapeCount" min="1" max="8" value="5" class="control-range">
+                        <span class="range-value" id="shapeCountValue">5</span>
+                    </div>
+                    <div class="control-group" style="display: none;">
+                        <label for="complexity">複雑度:</label>
+                        <select id="complexity" class="control-select">
+                            <option value="simple">シンプル</option>
+                            <option value="medium">中程度</option>
+                            <option value="complex">複雑</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary btn-generate" id="generateBtn">
+                        <i class="fas fa-sync-alt"></i>
+                        新しく生成
+                    </button>
+                </div>
+
+                <div class="gallery" id="gallery">
+                    <!-- デザインがここに動的に生成されます -->
+                </div>
+            </section>
+
+            <!-- お気に入りビュー -->
+            <section class="view-section" id="favoritesView">
+                <div class="favorites-header">
+                    <h2>
+                        <i class="fas fa-heart"></i>
+                        保存したデザイン
+                    </h2>
+                    <div class="favorites-actions">
+                        <button class="btn-secondary" id="clearAllBtn">
+                            <i class="fas fa-trash"></i>
+                            すべて削除
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 評価フィルタバー -->
+                <div class="rating-filter-bar">
+                    <button class="rating-filter-btn active" data-rating="all">
+                        すべて
+                    </button>
+                </div>
+
+                <!-- 色彩統計パネル（折りたたみ） -->
+                <div class="stats-accordion" id="colorStatsAccordion" style="display: none;">
+                    <button class="accordion-header" id="colorStatsHeader">
+                        <span class="accordion-icon">▶</span>
+                        <span class="accordion-title">色彩統計</span>
+                    </button>
+                    <div class="accordion-content" id="colorStatsContent" style="display: none;">
+                        <div class="color-stats-panel">
+                            <div class="stats-content">
+                                <div class="scheme-chart">
+                                    <h4>カラースキーム分布</h4>
+                                    <div class="chart-bars" id="schemeChart"></div>
+                                </div>
+                                <div class="color-palette">
+                                    <h4>使用色パレット</h4>
+                                    <div class="palette-colors" id="paletteColors"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 形状の傾向分析パネル（折りたたみ） -->
+                <div class="stats-accordion" id="shapeStatsAccordion" style="display: none;">
+                    <button class="accordion-header" id="shapeStatsHeader">
+                        <span class="accordion-icon">▶</span>
+                        <span class="accordion-title">形状の傾向分析</span>
+                    </button>
+                    <div class="accordion-content" id="shapeStatsContent" style="display: none;">
+                        <div class="shape-stats-panel">
+                            <div class="shape-chart" id="shapeChart"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="favorites-grid" id="favoritesGrid">
+                    <!-- お気に入りがここに表示されます -->
+                </div>
+                <div class="empty-state" id="emptyState">
+                    <i class="fas fa-heart-broken"></i>
+                    <p>まだお気に入りがありません</p>
+                    <p class="empty-state-hint">探索画面で気に入ったデザインを保存してみましょう！</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- モーダル（詳細表示） -->
+    <div class="modal" id="detailModal">
+        <div class="modal-overlay" id="modalOverlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-body">
+                <canvas id="detailCanvas" class="detail-canvas"></canvas>
+                <div class="modal-actions">
+                    <button class="btn-primary" id="downloadBtn">
+                        <i class="fas fa-download"></i>
+                        ダウンロード
+                    </button>
+                    <button class="btn-favorite" id="modalFavoriteBtn">
+                        <i class="fas fa-heart"></i>
+                        お気に入りに保存
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知 -->
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationText"></span>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
