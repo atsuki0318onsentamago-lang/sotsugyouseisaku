@@ -543,17 +543,30 @@ async function toggleFavorite(design, button) {
             localStorage.setItem('studentId', studentId);
             localStorage.setItem('studentName', studentName);
             
-            fetch(`${API_BASE_URL}/api/favorites`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    studentId,
-                    studentName,
-                    designData: designString,
-                    rating,
-                    tags: `${design.scheme},${design.complexity}`
-                })
-            }).catch(err => console.log('サーバー同期: オフライン'));
+            // サーバーへ同期（失敗時は通知して原因を把握しやすくする）
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/favorites`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        studentId,
+                        studentName,
+                        designData: designString,
+                        rating,
+                        tags: `${design.scheme},${design.complexity}`
+                    })
+                });
+
+                if (!res.ok) {
+                    addDebugLog(`❌ サーバー保存失敗: ${res.status}`);
+                    showNotification('サーバー保存に失敗しました。電波状況を確認してください。');
+                } else {
+                    addDebugLog('✅ サーバー保存成功');
+                }
+            } catch (err) {
+                addDebugLog(`❌ サーバー送信エラー: ${err.message}`);
+                showNotification('サーバー送信に失敗しました。オフラインの可能性があります。');
+            }
             
             button.classList.add('active');
             showNotification(`お気に入りに追加しました！(${rating})`);
