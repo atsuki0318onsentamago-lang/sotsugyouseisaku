@@ -168,6 +168,61 @@
     </style>
 </head>
 <body>
+    <!-- パスコード認証モーダル -->
+    <div id="authModal" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    ">
+        <div style="
+            background: white;
+            padding: 3rem;
+            border-radius: 16px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        ">
+            <i class="fas fa-lock" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
+            <h2 style="margin-bottom: 1rem; color: var(--text);">教員用ダッシュボード</h2>
+            <p style="color: #64748b; margin-bottom: 2rem;">アクセスにはパスコードが必要です</p>
+            
+            <div class="form-group">
+                <input 
+                    type="password" 
+                    id="passcodeInput" 
+                    placeholder="パスコードを入力" 
+                    style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5rem;"
+                    maxlength="4"
+                />
+            </div>
+            
+            <div id="authError" style="
+                color: #dc2626;
+                margin: 1rem 0;
+                font-size: 0.9rem;
+                display: none;
+            ">
+                ❌ パスコードが正しくありません
+            </div>
+            
+            <button class="btn" onclick="checkPasscode()" style="width: 100%; margin-top: 1rem;">
+                <i class="fas fa-sign-in-alt"></i> ログイン
+            </button>
+            
+            <p style="color: #94a3b8; font-size: 0.8rem; margin-top: 1.5rem;">
+                💡 デフォルトパスコード: 2026
+            </p>
+        </div>
+    </div>
+
     <div class="header">
         <h1><i class="fas fa-chalkboard-user"></i> 教員ダッシュボード</h1>
         <p>デザイン学習アプリ - 学生の感性データを確認</p>
@@ -211,7 +266,11 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:3000/api';
+        // API設定（本番環境優先）
+        const API_URL = 'https://sotsugyouseisaku-backend.onrender.com/api';
+        
+        // 簡易パスコード設定（変更可能）
+        const DASHBOARD_PASSCODE = '2026';
 
         // モックデータ（デモ用）
         const MOCK_DATA = {
@@ -400,6 +459,50 @@
         // 初期化時は何もしない（ボタンクリック待ち）
         document.addEventListener('DOMContentLoaded', () => {
             console.log('✅ ダッシュボード準備完了。「データ更新」ボタンをクリックしてください。');
+            
+            // パスコード入力でEnterキー対応
+            const passcodeInput = document.getElementById('passcodeInput');
+            if (passcodeInput) {
+                passcodeInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        checkPasscode();
+                    }
+                });
+                passcodeInput.focus();
+            }
+        });
+        
+        // パスコード認証
+        function checkPasscode() {
+            const input = document.getElementById('passcodeInput');
+            const error = document.getElementById('authError');
+            const modal = document.getElementById('authModal');
+            
+            if (input.value === DASHBOARD_PASSCODE) {
+                // 認証成功
+                modal.style.display = 'none';
+                console.log('✅ 認証成功');
+                
+                // セッションストレージに保存（リロード時の再認証を防ぐ）
+                sessionStorage.setItem('dashboardAuth', 'true');
+            } else {
+                // 認証失敗
+                error.style.display = 'block';
+                input.value = '';
+                input.focus();
+                
+                // エラーを3秒後に非表示
+                setTimeout(() => {
+                    error.style.display = 'none';
+                }, 3000);
+            }
+        }
+        
+        // ページロード時に認証状態チェック
+        window.addEventListener('DOMContentLoaded', () => {
+            if (sessionStorage.getItem('dashboardAuth') === 'true') {
+                document.getElementById('authModal').style.display = 'none';
+            }
         });
     </script>
 </body>
