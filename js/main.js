@@ -17,8 +17,22 @@ function addDebugLog(msg) {
     console.log(logEntry);
 }
 
-// API ベース URL（同じホストのポート3000を使用）
-const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:3000`;
+// API ベース URL
+// 優先順位: localStorageの上書き → Render同一オリジン → 固定のクラウドURL
+const API_BASE_URL = (() => {
+    try {
+        const stored = localStorage.getItem('apiBaseUrl');
+        if (stored && stored.trim()) return stored.trim();
+    } catch (_) {}
+
+    // Render上でフロントを開いた場合は同一オリジンを使用
+    if (window.location.hostname.endsWith('onrender.com')) {
+        return `${window.location.protocol}//${window.location.host}`;
+    }
+
+    // クラウドのバックエンド（Render）
+    return 'https://sotsugyouseisaku-backend.onrender.com';
+})();
 addDebugLog(`📡 API: ${API_BASE_URL}`);
 
 // 学生情報の初期化
